@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "shackles"
+version = "0.1.0"
+description = ""
+authors = ["Grayson Miller <grayson.miller124@gmail.com>"]
+readme = "README.md"
+packages = [{include = "shackles", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+shack-test = "shackles.__main__:main"
