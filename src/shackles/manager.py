@@ -3,11 +3,9 @@ import logging
 from functools import partial
 
 from .client import ChainLink
-
+from .utils import make_header
 
 class RingManager:
-    factory = lambda fut: partial(ChainLink, config={}, future=fut)
-
     def __init__(self, loop=None) -> None:
         if loop is None:
             self.loop = asyncio.get_event_loop()
@@ -34,17 +32,17 @@ class RingManager:
         for addr in hosts:
             server_finished = self.loop.create_future()
             peer = await self.loop.create_server(
-                RingManager.factory(server_finished), addr[0], addr[1], ssl=None
+                ChainLink.factory(server_finished), addr[0], addr[1], ssl=None
             )
 
             self.add_peer(server_finished, peer, addr)
 
     async def connect(self, a1, a2):
         transport, _ = await self.loop.create_connection(
-            RingManager.factory(None), a1[0], a1[1]
+            ChainLink.factory(None), a1[0], a1[1]
         )
 
-        transport.write(f"NP={a2[0]}:{a2[1]}\n".encode())
+        transport.write(make_header(*a2))
         transport.close()
 
     async def connect_peers(self):

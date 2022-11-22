@@ -1,12 +1,16 @@
 import asyncio
 from asyncio import transports
+from functools import partial
 import logging
 
+from .utils import parse_header
 
 class ChainLink(asyncio.Protocol):
-    """ peer
+    """ A peer in a web of peers.
     
     """
+    factory = lambda fut: partial(ChainLink, config={}, future=fut)
+
     def __init__(self, future: asyncio.Future, config: dict = None) -> None:
         self.loop = asyncio.get_event_loop()
         self.future = future
@@ -32,29 +36,20 @@ class ChainLink(asyncio.Protocol):
 
         self._new_connection(data)
 
-    @staticmethod
-    def _parse_header(data: bytes) -> None:
-        # Header = f"NP={host}:{port}\n"
-        if data[:2] == b"NP=" and data[-1] == b"\n":
-            host, port = data[3:-1].split(b":")
-            port = int(port, 10)
-            return host, port
-
     def _new_connection(self, data):
         peer_finished = self.loop.create_future()
 
-        addr = self._parse_header(data)
+        addr = parse_header(data)
         if addr:
             host, port = addr
         else: 
             return
 
         task = self.loop.create_task(self.loop.create_connection(
-            RingManager.factory(peer_finished), host, port
+            ChainLink.factory(peer_finished), host, port
         ))
-        print(task)
 
-        task.add_done_callback(partial(self._peer_connected, peer_finished))
+        task.add_done_callback(self._peer_connected)
 
     def _peer_connected(self, future: asyncio.Future) -> None:    
         logging.debug("Peer connected")
