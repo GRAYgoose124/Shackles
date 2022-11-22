@@ -6,6 +6,10 @@ from .client import ChainLink
 from .utils import make_header
 
 class RingManager:
+    """ Manages a ring of peers.
+
+        All peers are connected to each other in a ring and instanced on localhost.
+    """
     def __init__(self, loop=None) -> None:
         if loop is None:
             self.loop = asyncio.get_event_loop()
@@ -15,9 +19,12 @@ class RingManager:
         self.reset()
 
     def reset(self):
+        """ Clears the peer list. """
         self.peers = {}
 
     def cancel_all(self):
+        """ Cancel all peers and futures, then reset the manager. """
+
         for peer, future in zip(self.peers.values(), self.futures.values()):
             peer.close()
             future.cancel()
@@ -38,6 +45,7 @@ class RingManager:
             self.add_peer(server_finished, peer, addr)
 
     async def connect(self, a1, a2):
+        """ Connects two peers together using an ad-hoc connection. """
         transport, _ = await self.loop.create_connection(
             ChainLink.factory(None), a1[0], a1[1]
         )
@@ -46,6 +54,7 @@ class RingManager:
         transport.close()
 
     async def connect_peers(self):
+        """ Connect all peers in the ring together. """
         logging.debug("Connecting peers")
         for a1, a2 in zip(self.peers.keys(), list(self.peers.keys())[1:]):
             if a1 == a2:
@@ -58,6 +67,7 @@ class RingManager:
             await self.connect(a1, a2)
 
     async def run(self):
+        """ Connect and start the ring. """
         logging.debug("Starting ring manager")
         await self.connect_peers()
 

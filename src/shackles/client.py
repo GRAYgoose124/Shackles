@@ -37,6 +37,7 @@ class ChainLink(asyncio.Protocol):
         self._new_connection(data)
 
     def _new_connection(self, data):
+        """ Handle a new connection header received through the protocol. """
         peer_finished = self.loop.create_future()
 
         addr = parse_header(data)
